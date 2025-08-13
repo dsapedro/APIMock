@@ -13,8 +13,8 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
   res.header('Access-Control-Expose-Headers', 'Date');
-  res.header('Cache-Control', 'no-store');
-  // Garantir Date (a maioria dos servidores já envia, mas garantimos)
+  res.header('Cache-Control', 'no-store'); // evita cache
+  // Garante um header Date sempre presente
   res.header('Date', new Date().toUTCString());
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
@@ -28,7 +28,7 @@ function loadDB() {
   try {
     const raw = fs.readFileSync(DB_PATH, 'utf8');
     return JSON.parse(raw);
-  } catch (e) {
+  } catch (_e) {
     return { marcacoes: [] };
   }
 }
@@ -38,18 +38,47 @@ function saveDB(db) {
 }
 
 // === Endpoints ===
+
+// Hora do servidor (fallback para sincronizar clock no frontend)
+app.get('/time', (req, res) => {
+  const now = new Date();
+  // reforça os headers também aqui
+  res.header('Access-Control-Expose-Headers', 'Date');
+  res.header('Cache-Control', 'no-store');
+  res.header('Date', now.toUTCString());
+  res.json({
+    serverIso: now.toISOString(),
+    serverEpochMs: now.getTime()
+  });
+});
+
+// Lista marcações
 app.get('/marcacoes', (req, res) => {
   const db = loadDB();
   res.json(db.marcacoes || []);
 });
 
+// Cria marcação (usa hora do servidor)
 app.post('/marcacoes', (req, res) => {
   const db = loadDB();
   const body = req.body || {};
+
+  const serverNowIso = new Date().toISOString();
+
   const nova = {
-    id: nanoid(4),
-    ...body
+    id: nanoid(6),
+    usuario: body.usuario ?? 'Desconhecido',
+    tipo: body.tipo ?? 'entrada',
+    data: serverNowIso,                // horário do servidor padronizado
+    origem: body.origem ?? 'online',
+    // campos opcionais enviados pelo cliente
+    lat: body.lat,
+    lng: body.lng,
+    accuracyMeters: body.accuracyMeters,
+    timeZone: body.timeZone,
+    agrupadorId: body.agrupadorId
   };
+
   db.marcacoes = db.marcacoes || [];
   db.marcacoes.push(nova);
   saveDB(db);
