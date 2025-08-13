@@ -4,21 +4,19 @@ const path = require('path');
 
 const server = jsonServer.create();
 const router = jsonServer.router(path.join(__dirname, 'db.json'));
-const defaults = jsonServer.defaults();
+const defaults = jsonServer.defaults({
+  static: false // evita tentar servir 'public/'
+});
 
+// CORS + expor cabeçalhos + garantir 'Date'
 server.use((req, res, next) => {
-  // CORS básico
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
-
-  // 🔑 Expor o header Date para o browser (essencial pro ClockService)
   res.header('Access-Control-Expose-Headers', 'Date');
-
-  // Garantia extra (a maioria dos servers já manda Date automaticamente)
+  // a maioria dos servers já enviam 'Date', mas garantimos:
   res.header('Date', new Date().toUTCString());
-
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
 });
 
@@ -26,4 +24,7 @@ server.use(defaults);
 server.use(router);
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log('Mock API on http://localhost:' + PORT));
+const HOST = '0.0.0.0';
+server.listen(PORT, HOST, () => {
+  console.log(`Mock API running on http://${HOST}:${PORT}`);
+});
