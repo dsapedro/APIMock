@@ -13,6 +13,7 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
   res.header('Access-Control-Expose-Headers', 'Date');
+  res.header('Cache-Control', 'no-store');
   // Garantir Date (a maioria dos servidores já envia, mas garantimos)
   res.header('Date', new Date().toUTCString());
   if (req.method === 'OPTIONS') return res.sendStatus(204);
