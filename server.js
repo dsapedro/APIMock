@@ -7,17 +7,24 @@ const { nanoid } = require('nanoid');
 const app = express();
 app.use(express.json());
 
-// === CORS + expor 'Date' (essencial pro ClockService) ===
+// === CORS + expor 'Date' ===
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+  
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cache-Control, X-Requested-With');
   res.header('Access-Control-Expose-Headers', 'Date');
-  res.header('Cache-Control', 'no-store'); // evita cache
-  // Garante um header Date sempre presente
+  res.header('Cache-Control', 'no-store');
   res.header('Date', new Date().toUTCString());
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
+});
+
+app.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cache-Control, X-Requested-With');
+  res.sendStatus(204);
 });
 
 // === Caminho do "banco" (arquivo JSON) ===
