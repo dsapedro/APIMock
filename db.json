@@ -1,0 +1,63 @@
+{
+  "marcacoes": [
+    {
+      "id": "fae5",
+      "usuario": "Henrique",
+      "tipo": "Entrada",
+      "origem": "online",
+      "lat": -19.8705152,
+      "lng": -43.9123968,
+      "accuracyMeters": 891.7787650152109,
+      "timeZone": "America/Sao_Paulo",
+      "agrupadorId": "empresa-matriz"
+    },
+    {
+      "id": "8jkRjr",
+      "usuario": "Henrique",
+      "tipo": "Saída",
+      "data": "2025-08-14T15:22:28.392Z",
+      "origem": "online",
+      "lat": -19.8705152,
+      "lng": -43.9123968,
+      "accuracyMeters": 891.7787650152109,
+      "timeZone": "America/Sao_Paulo",
+      "agrupadorId": "empresa-matriz"
+    },
+    {
+      "id": "FfWIFH",
+      "usuario": "Henrique",
+      "tipo": "Entrada",
+      "data": "2025-08-14T15:22:31.313Z",
+      "origem": "online",
+      "lat": -19.8705152,
+      "lng": -43.9123968,
+      "accuracyMeters": 891.7787650152109,
+      "timeZone": "America/Sao_Paulo",
+      "agrupadorId": "empresa-matriz"
+    },
+    {
+      "id": "hzUNR-",
+      "usuario": "Henrique",
+      "tipo": "Entrada",
+      "data": "2025-08-14T15:23:32.799Z",
+      "origem": "online",
+      "lat": -19.8705152,
+      "lng": -43.9123968,
+      "accuracyMeters": 891.7787650152109,
+      "timeZone": "America/Sao_Paulo",
+      "agrupadorId": "empresa-matriz"
+    },
+    {
+      "id": "_w9F7d",
+      "usuario": "Henrique",
+      "tipo": "Saída",
+      "data": "2025-08-14T15:23:41.385Z",
+      "origem": "online",
+      "lat": -19.8705152,
+      "lng": -43.9123968,
+      "accuracyMeters": 891.7787650152109,
+      "timeZone": "America/Sao_Paulo",
+      "agrupadorId": "empresa-matriz"
+    }
+  ]
+}
