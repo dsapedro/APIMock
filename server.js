@@ -85,18 +85,26 @@ app.post('/marcacoes', (req, res) => {
     tipo: body.tipo ?? 'entrada',
     data: serverNowIso,
     origem: body.origem ?? 'online',
+
+    // localização/opcionais
     lat: body.lat,
     lng: body.lng,
     accuracyMeters: body.accuracyMeters,
     timeZone: body.timeZone,
     agrupadorId: body.agrupadorId,
 
-    // para upsert no cliente
+    // upsert/identificação offline
     clientId: body.clientId || null,
     deviceWallIso: body.deviceWallIso || null,
 
-    // auditoria
-    offlineConfidence: body.offlineConfidence || null,
+    // auditoria (NÃO exibida ao usuário final)
+    offlineConfidence: body.offlineConfidence || null,     // 'perf' | 'offset'
+    suspectClockSkew: !!body.suspectClockSkew,
+    skewMs: (typeof body.skewMs === 'number' ? Math.round(body.skewMs) : null),
+    deviceUtcOffsetMin: (typeof body.deviceUtcOffsetMin === 'number' ? body.deviceUtcOffsetMin : null),
+    networkAtMark: body.networkAtMark || null,
+
+    // ecoa a base usada pelo servidor (útil p/ debug)
     approxServerMs: (typeof body.approxServerMs === 'number' ? Math.round(body.approxServerMs) : null)
   };
 
