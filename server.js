@@ -7,7 +7,7 @@ const { nanoid } = require('nanoid');
 const app = express();
 app.use(express.json());
 
-// ===== CORS + expor 'Date' (essencial para o ClockService) =====
+// ===== CORS + expor 'Date' =====
 const ALLOWED_HEADERS = [
   'Origin',
   'X-Requested-With',
@@ -26,9 +26,7 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Headers', ALLOWED_HEADERS);
   res.header('Access-Control-Expose-Headers', 'Date');
   res.header('Cache-Control', 'no-store');
-  // Garante que sempre haja um Date coerente (UTC)
   res.header('Date', new Date().toUTCString());
-
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
 });
@@ -40,30 +38,14 @@ app.options('*', (_req, res) => {
   res.sendStatus(204);
 });
 
-// ===== Caminho do "banco" (arquivo JSON) =====
+// ===== DB =====
 const DB_PATH = path.join(__dirname, 'db.json');
+function loadDB() { try { return JSON.parse(fs.readFileSync(DB_PATH, 'utf8')); } catch { return { marcacoes: [] }; } }
+function saveDB(db) { try { fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2)); } catch (e) { console.error('save db.json:', e); } }
 
-function loadDB() {
-  try {
-    const raw = fs.readFileSync(DB_PATH, 'utf8');
-    return JSON.parse(raw);
-  } catch (_e) {
-    return { marcacoes: [] };
-  }
-}
-
-function saveDB(db) {
-  try {
-    fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2));
-  } catch (e) {
-    console.error('Falha ao salvar db.json:', e);
-  }
-}
-
-// ===== Utilidades de horário =====
-// Guarda-chuva: só aceitaremos approxServerMs se estiver dentro desse intervalo do relógio atual do servidor.
-// Ajuste conforme política; aqui 10 minutos.
-const MAX_ACCEPTED_SKEW_MS = 10 * 60 * 1000;
+// ===== Horário =====
+// em dev, usa guarda maior pra não “colar” hora da sincronização em offline antigos
+const MAX_ACCEPTED_SKEW_MS = 2 * 60 * 60 * 1000; // 2h
 
 function chooseOfficialEpochMs(approxServerMs) {
   const now = Date.now();
@@ -76,32 +58,20 @@ function chooseOfficialEpochMs(approxServerMs) {
 }
 
 // ===== Endpoints =====
-
-// Hora do servidor (para sincronizar relógio no frontend)
 app.get('/time', (_req, res) => {
   const now = new Date();
   res.header('Access-Control-Expose-Headers', 'Date');
   res.header('Cache-Control', 'no-store');
   res.header('Date', now.toUTCString());
-
-  res.json({
-    serverIso: now.toISOString(),
-    serverEpochMs: now.getTime()
-  });
+  res.json({ serverIso: now.toISOString(), serverEpochMs: now.getTime() });
 });
 
-// Lista marcações
 app.get('/marcacoes', (_req, res) => {
   const db = loadDB();
   res.header('Cache-Control', 'no-store');
   res.json(db.marcacoes || []);
 });
 
-// Cria marcação
-// - ONLINE: cliente envia sem hora; servidor define 'data' = agora.
-// - OFFLINE: cliente envia approxServerMs + deviceWallIso.
-//   -> servidor usa chooseOfficialEpochMs(approxServerMs) com guarda;
-//   -> ecoa deviceWallIso para o app fazer "upsert" (troca do registro local).
 app.post('/marcacoes', (req, res) => {
   const db = loadDB();
   const body = req.body || {};
@@ -113,18 +83,18 @@ app.post('/marcacoes', (req, res) => {
     id: nanoid(6),
     usuario: body.usuario ?? 'Desconhecido',
     tipo: body.tipo ?? 'entrada',
-    data: serverNowIso,                           // horário oficial (UTC ISO)
+    data: serverNowIso,
     origem: body.origem ?? 'online',
-
-    // extras
     lat: body.lat,
     lng: body.lng,
     accuracyMeters: body.accuracyMeters,
     timeZone: body.timeZone,
     agrupadorId: body.agrupadorId,
 
-    // auditoria/offline-upsert
+    // para upsert no cliente
+    clientId: body.clientId || null,
     deviceWallIso: body.deviceWallIso || null,
+
     approxServerMs: (typeof body.approxServerMs === 'number' ? Math.round(body.approxServerMs) : null)
   };
 
@@ -136,12 +106,8 @@ app.post('/marcacoes', (req, res) => {
   res.status(201).json(nova);
 });
 
-// Healthcheck simples
 app.get('/', (_req, res) => res.send('OK'));
 
-// ===== Boot =====
 const PORT = process.env.PORT || 3000;
 const HOST = '0.0.0.0';
-app.listen(PORT, HOST, () => {
-  console.log(`API on http://${HOST}:${PORT}`);
-});
+app.listen(PORT, HOST, () => console.log(`API on http://${HOST}:${PORT}`));
