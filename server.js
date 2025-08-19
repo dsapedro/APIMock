@@ -44,17 +44,17 @@ function loadDB() { try { return JSON.parse(fs.readFileSync(DB_PATH, 'utf8')); }
 function saveDB(db) { try { fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2)); } catch (e) { console.error('save db.json:', e); } }
 
 // ===== Horário =====
-// em dev, usa guarda maior pra não “colar” hora da sincronização em offline antigos
-const MAX_ACCEPTED_SKEW_MS = 2 * 60 * 60 * 1000; // 2h
+// Aceita marcação offline até 12h distante do horário atual do servidor
+const MAX_ACCEPTED_SKEW_MS = 12 * 60 * 60 * 1000; // 12h
 
 function chooseOfficialEpochMs(approxServerMs) {
   const now = Date.now();
   if (typeof approxServerMs === 'number' && Number.isFinite(approxServerMs)) {
     if (Math.abs(approxServerMs - now) <= MAX_ACCEPTED_SKEW_MS) {
-      return Math.round(approxServerMs);
+      return Math.round(approxServerMs); // mantém a hora enviada
     }
   }
-  return now;
+  return now; // fora da janela -> usa agora (política simples para MVP)
 }
 
 // ===== Endpoints =====
@@ -95,6 +95,8 @@ app.post('/marcacoes', (req, res) => {
     clientId: body.clientId || null,
     deviceWallIso: body.deviceWallIso || null,
 
+    // auditoria
+    offlineConfidence: body.offlineConfidence || null,
     approxServerMs: (typeof body.approxServerMs === 'number' ? Math.round(body.approxServerMs) : null)
   };
 
