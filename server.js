@@ -61,9 +61,8 @@ function saveDB(db) {
 }
 
 // ===== Utilidades de horário =====
-
 // Guarda-chuva: só aceitaremos approxServerMs se estiver dentro desse intervalo do relógio atual do servidor.
-// Ajuste conforme política (5–15 min costuma ser bom). Aqui usamos 10 minutos.
+// Ajuste conforme política; aqui 10 minutos.
 const MAX_ACCEPTED_SKEW_MS = 10 * 60 * 1000;
 
 function chooseOfficialEpochMs(approxServerMs) {
@@ -81,7 +80,6 @@ function chooseOfficialEpochMs(approxServerMs) {
 // Hora do servidor (para sincronizar relógio no frontend)
 app.get('/time', (_req, res) => {
   const now = new Date();
-  // reforça headers também na rota
   res.header('Access-Control-Expose-Headers', 'Date');
   res.header('Cache-Control', 'no-store');
   res.header('Date', now.toUTCString());
@@ -100,11 +98,10 @@ app.get('/marcacoes', (_req, res) => {
 });
 
 // Cria marcação
-// Regras:
 // - ONLINE: cliente envia sem hora; servidor define 'data' = agora.
-// - OFFLINE: cliente pode enviar approxServerMs e deviceWallIso.
-//   -> servidor usa chooseOfficialEpochMs(approxServerMs) com guarda-chuva;
-//   -> ecoa deviceWallIso para o app fazer "upsert" (trocar o registro local).
+// - OFFLINE: cliente envia approxServerMs + deviceWallIso.
+//   -> servidor usa chooseOfficialEpochMs(approxServerMs) com guarda;
+//   -> ecoa deviceWallIso para o app fazer "upsert" (troca do registro local).
 app.post('/marcacoes', (req, res) => {
   const db = loadDB();
   const body = req.body || {};
@@ -118,7 +115,8 @@ app.post('/marcacoes', (req, res) => {
     tipo: body.tipo ?? 'entrada',
     data: serverNowIso,                           // horário oficial (UTC ISO)
     origem: body.origem ?? 'online',
-    // campos opcionais enviados pelo cliente
+
+    // extras
     lat: body.lat,
     lng: body.lng,
     accuracyMeters: body.accuracyMeters,
@@ -126,7 +124,7 @@ app.post('/marcacoes', (req, res) => {
     agrupadorId: body.agrupadorId,
 
     // auditoria/offline-upsert
-    deviceWallIso: body.deviceWallIso || null,    // ecoado para o cliente identificar e substituir a local
+    deviceWallIso: body.deviceWallIso || null,
     approxServerMs: (typeof body.approxServerMs === 'number' ? Math.round(body.approxServerMs) : null)
   };
 
